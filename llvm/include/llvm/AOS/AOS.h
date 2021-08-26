@@ -25,7 +25,10 @@ Pass *createAOSOptPass(); //yh+
 Pass *createAOSMallocPass(); //yh+
 Pass *createAOSOptDpiPass(); //yh+
 Pass *createAOSInputDetectPass(); //yh+
+Pass *createAOSBBCounterPass(); //yh+
+Pass *createAOSPointerAliasPass(); //yh+
 Pass *createAOSMarkTaintPass(); //yh+
+Pass *createAOSReachTestPass(); //yh+
 Pass *createAOSTaintOptPass(); //yh+
 }
 } // llvm

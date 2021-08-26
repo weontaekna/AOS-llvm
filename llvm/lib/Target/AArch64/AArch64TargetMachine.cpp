@@ -467,8 +467,11 @@ void AArch64PassConfig::addIRPasses() {
   //if (AOSHeapInst == AOS::AOSHeapInstEnabled)
   //addPass(AOS::createAOSOptPass()); //yh+
   //addPass(AOS::createAOSMallocPass()); //yh+
+
+	addPass(AOS::createAOSBBCounterPass()); //yh+
+  addPass(AOS::createAOSPointerAliasPass()); //yh+
   addPass(AOS::createAOSMarkTaintPass()); //yh+
-  addPass(AOS::createAOSTaintOptPass()); //yh+
+  addPass(AOS::createAOSReachTestPass()); //yh+
 }
 
 // Pass Pipeline Configuration

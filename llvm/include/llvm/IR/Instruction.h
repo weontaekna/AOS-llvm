@@ -754,18 +754,6 @@ protected:
 private:
   /// Create a copy of this instruction.
   Instruction *cloneImpl() const;
-
-private:
-  bool tainted;
-
-public:
-  void setTainted(bool t) {
-    tainted = t;
-  }
-
-  bool isTainted() {
-    return tainted;
-  }
 };
 
 inline void ilist_alloc_traits<Instruction>::deleteNode(Instruction *V) {

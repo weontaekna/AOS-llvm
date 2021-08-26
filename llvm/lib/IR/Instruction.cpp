@@ -31,8 +31,6 @@ Instruction::Instruction(Type *ty, unsigned it, Use *Ops, unsigned NumOps,
     assert(BB && "Instruction to insert before is not in a basic block!");
     BB->getInstList().insert(InsertBefore->getIterator(), this);
   }
-
-  tainted = false; //yh+
 }
 
 Instruction::Instruction(Type *ty, unsigned it, Use *Ops, unsigned NumOps,
@@ -42,8 +40,6 @@ Instruction::Instruction(Type *ty, unsigned it, Use *Ops, unsigned NumOps,
   // append this instruction into the basic block
   assert(InsertAtEnd && "Basic block to append to may not be NULL!");
   InsertAtEnd->getInstList().push_back(this);
-
-  tainted = false; //yh+
 }
 
 Instruction::~Instruction() {

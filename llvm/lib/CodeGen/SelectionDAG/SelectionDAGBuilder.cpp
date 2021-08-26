@@ -5071,53 +5071,76 @@ SelectionDAGBuilder::visitIntrinsicCall(const CallInst &I, unsigned Intrinsic) {
     visitTargetIntrinsic(I, Intrinsic);
     return nullptr;
   //yh+begin
-  case Intrinsic::aos_malloc: {
-    //EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
-    SDVTList nodeTys = DAG.getVTList(MVT::Other, MVT::i64);
-    SDValue Ops[3];
-    Ops[0] = getRoot();
-    Ops[1] = getValue(I.getArgOperand(0));
-    Ops[2] = getValue(I.getArgOperand(1));
-    SDValue mallocCall = DAG.getNode(ISD::AOS_MALLOC, sdl,
-                                   nodeTys, Ops);
-    DAG.setRoot(mallocCall.getValue(0));
-    return nullptr;
-  }
-  case Intrinsic::aos_calloc: {
-    //EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
-    SDVTList nodeTys = DAG.getVTList(MVT::Other, MVT::i64);
-    SDValue Ops[3];
-    Ops[0] = getRoot();
-    Ops[1] = getValue(I.getArgOperand(0));
-    Ops[2] = getValue(I.getArgOperand(1));
-    SDValue callocCall = DAG.getNode(ISD::AOS_CALLOC, sdl,
-                                   nodeTys, Ops);
-    DAG.setRoot(callocCall.getValue(0));
-    return nullptr;
-  }
-  case Intrinsic::aos_realloc: {
-    //EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
-    SDVTList nodeTys = DAG.getVTList(MVT::Other, MVT::i64);
-    SDValue Ops[3];
-    Ops[0] = getRoot();
-    Ops[1] = getValue(I.getArgOperand(0));
-    Ops[2] = getValue(I.getArgOperand(1));
-    SDValue reallocCall = DAG.getNode(ISD::AOS_REALLOC, sdl,
-                                   nodeTys, Ops);
-    DAG.setRoot(reallocCall.getValue(0));
-    return nullptr;
-  }
-  case Intrinsic::aos_free: {
-    //EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
-    SDVTList nodeTys = DAG.getVTList(MVT::Other, MVT::i64);
-    SDValue Ops[2];
-    Ops[0] = getRoot();
-    Ops[1] = getValue(I.getArgOperand(0));
-    SDValue freeCall = DAG.getNode(ISD::AOS_FREE, sdl,
-                                   nodeTys, Ops);
-    DAG.setRoot(freeCall.getValue(0));
-    return nullptr;
-  }
+  //case Intrinsic::aos_array: {
+  //  //EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
+  //  SDVTList nodeTys = DAG.getVTList(MVT::Other, MVT::i64);
+  //  SDValue Ops[3];
+  //  Ops[0] = getRoot();
+  //  Ops[1] = getValue(I.getArgOperand(0));
+  //  Ops[2] = getValue(I.getArgOperand(1));
+  //  SDValue arrayCall = DAG.getNode(ISD::AOS_ARRAY, sdl,
+  //                                 nodeTys, Ops);
+  //  DAG.setRoot(arrayCall.getValue(0));
+  //  return nullptr;
+  //}
+  //case Intrinsic::aos_malloc: {
+  //  //EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
+  //  SDVTList nodeTys = DAG.getVTList(MVT::Other, MVT::i64);
+  //  SDValue Ops[3];
+  //  Ops[0] = getRoot();
+  //  Ops[1] = getValue(I.getArgOperand(0));
+  //  Ops[2] = getValue(I.getArgOperand(1));
+  //  SDValue mallocCall = DAG.getNode(ISD::AOS_MALLOC, sdl,
+  //                                 nodeTys, Ops);
+  //  DAG.setRoot(mallocCall.getValue(0));
+  //  return nullptr;
+  //}
+  //case Intrinsic::aos_calloc: {
+  //  //EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
+  //  SDVTList nodeTys = DAG.getVTList(MVT::Other, MVT::i64);
+  //  SDValue Ops[3];
+  //  Ops[0] = getRoot();
+  //  Ops[1] = getValue(I.getArgOperand(0));
+  //  Ops[2] = getValue(I.getArgOperand(1));
+  //  SDValue callocCall = DAG.getNode(ISD::AOS_CALLOC, sdl,
+  //                                 nodeTys, Ops);
+  //  DAG.setRoot(callocCall.getValue(0));
+  //  return nullptr;
+  //}
+  //case Intrinsic::aos_realloc: {
+  //  //EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
+  //  SDVTList nodeTys = DAG.getVTList(MVT::Other, MVT::i64);
+  //  SDValue Ops[3];
+  //  Ops[0] = getRoot();
+  //  Ops[1] = getValue(I.getArgOperand(0));
+  //  Ops[2] = getValue(I.getArgOperand(1));
+  //  SDValue reallocCall = DAG.getNode(ISD::AOS_REALLOC, sdl,
+  //                                 nodeTys, Ops);
+  //  DAG.setRoot(reallocCall.getValue(0));
+  //  return nullptr;
+  //}
+  //case Intrinsic::aos_dealloc: {
+  //  //EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
+  //  SDVTList nodeTys = DAG.getVTList(MVT::Other, MVT::i64);
+  //  SDValue Ops[2];
+  //  Ops[0] = getRoot();
+  //  Ops[1] = getValue(I.getArgOperand(0));
+  //  SDValue deallocCall = DAG.getNode(ISD::AOS_DEALLOC, sdl,
+  //                                 nodeTys, Ops);
+  //  DAG.setRoot(deallocCall.getValue(0));
+  //  return nullptr;
+  //}
+  //case Intrinsic::aos_free: {
+  //  //EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
+  //  SDVTList nodeTys = DAG.getVTList(MVT::Other, MVT::i64);
+  //  SDValue Ops[2];
+  //  Ops[0] = getRoot();
+  //  Ops[1] = getValue(I.getArgOperand(0));
+  //  SDValue freeCall = DAG.getNode(ISD::AOS_FREE, sdl,
+  //                                 nodeTys, Ops);
+  //  DAG.setRoot(freeCall.getValue(0));
+  //  return nullptr;
+  //}
   //case Intrinsic::aos_autm: {
   //  //EVT VT = TLI.getValueType(DAG.getDataLayout(), I.getType());
   //  SDVTList nodeTys = DAG.getVTList(MVT::Other, MVT::i64);

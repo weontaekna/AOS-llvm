@@ -420,10 +420,12 @@ std::string SDNode::getOperationName(const SelectionDAG *G) const {
   case ISD::VECREDUCE_FMAX:             return "vecreduce_fmax";
   case ISD::VECREDUCE_FMIN:             return "vecreduce_fmin";
   //yh+begin
-  case ISD::AOS_MALLOC:                 return "malloc";
-  case ISD::AOS_CALLOC:                 return "calloc";
-  case ISD::AOS_REALLOC:                return "realloc";
-  case ISD::AOS_FREE:                   return "free";
+  //case ISD::AOS_ARRAY:                  return "array";
+  //case ISD::AOS_MALLOC:                 return "malloc";
+  //case ISD::AOS_CALLOC:                 return "calloc";
+  //case ISD::AOS_REALLOC:                return "realloc";
+  //case ISD::AOS_DEALLOC:                return "dealloc";
+  //case ISD::AOS_FREE:                   return "free";
   //case ISD::AOS_AUTM:                   return "autm";
   //case ISD::AOS_PACMA:                  return "pacma";
   //case ISD::AOS_XPACM:                  return "xpacm";

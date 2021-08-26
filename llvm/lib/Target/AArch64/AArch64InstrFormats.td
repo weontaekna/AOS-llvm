@@ -1401,6 +1401,15 @@ class AOSOneReg<bits<3> opcode_prefix, bits<2> opcode, string asm>
   let Inst{9-5} = 0b11111;
   let Inst{4-0} = Rd;
 }
+
+class AOSZeroReg<bits<3> opcode_prefix, bits<2> opcode, string asm>
+  : I<(outs), (ins), asm, "", "", []>, Sched<[]> {
+  let Inst{31-15} = 0b11011010110000010;
+  let Inst{14-12} = opcode_prefix;
+  let Inst{11-10} = opcode;
+  let Inst{9-5} = 0b11111;
+  let Inst{4-0} = 0b00000;
+}
 //yh+end
 
 class AuthReturn<bits<3> op, bits<1> M, string asm>

@@ -822,11 +822,13 @@ namespace ISD {
 
 
     //yh+begin
-    AOS_MALLOC,
-    AOS_CALLOC,
-    AOS_REALLOC,
-    AOS_FREE,
-    AOS_AUTM,
+    //AOS_ARRAY,
+    //AOS_MALLOC,
+    //AOS_CALLOC,
+    //AOS_REALLOC,
+    //AOS_DEALLOC,
+    //AOS_FREE,
+    //AOS_AUTM,
     //yh+end
 
     // Masked load and store - consecutive vector load and store operations

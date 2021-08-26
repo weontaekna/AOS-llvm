@@ -66,145 +66,179 @@ bool AArch64AOSPass::runOnMachineFunction(MachineFunction &MF) {
 
   for (auto &MBB : MF) {
     for (auto MIi = MBB.instr_begin(), MIie = MBB.instr_end(); MIi != MIie;) {
+			//(*MIi).dump();
       auto MIk = MIi++;
 
       switch (MIk->getOpcode()) {
-        case AArch64::AOS_MALLOC: {
-          auto MIj = MIk;
-          auto MIjb = MBB.instr_begin();
-
-          for (; MIj != MIjb; MIj--) {
-            if (MIj->getOpcode() == 383) { // find bl @malloc
-              MIj++;
-
-              BuildMI(MBB, MIj, MIk->getDebugLoc(), TII->get(AArch64::AOS_PACMA), MIk->getOperand(1).getReg())
-                .addUse(AArch64::SP)
-                //.addUse(AArch64::XZR)
-                .addReg(MIk->getOperand(0).getReg());
-              BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDSTR), MIk->getOperand(1).getReg())
-                .addUse(MIk->getOperand(0).getReg());
-
-              break;
-            }
-          }
-
-          assert(MIj != MIjb && "Couldn't find bl @malloc\n");
+        case AArch64::WYFY_PACMA: {
+          BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_PACMA), MIk->getOperand(1).getReg())
+            .addUse(AArch64::SP)
+            .addReg(MIk->getOperand(2).getReg());
 
           MIk->removeFromParent();
           modified = true;
           ++StatNumPACMA;
+
           break;
         }
-        case AArch64::AOS_CALLOC: {
-          auto MIj = MIk;
-          auto MIjb = MBB.instr_begin();
+        case AArch64::WYFY_XPACM: {
+          BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_XPACM), MIk->getOperand(1).getReg());
 
-          for (; MIj != MIjb; MIj--) {
-            if (MIj->getOpcode() == 383) { // find bl @calloc
-              MIj++;
+          MIk->removeFromParent();
+          modified = true;
+          ++StatNumXPACM;
 
-              BuildMI(MBB, MIj, MIk->getDebugLoc(), TII->get(AArch64::AOS_PACMA), MIk->getOperand(1).getReg())
-                .addUse(AArch64::SP)
-                //.addUse(AArch64::XZR)
-                .addReg(MIk->getOperand(0).getReg());
-              BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDSTR), MIk->getOperand(1).getReg())
-                .addUse(MIk->getOperand(0).getReg());
+          break;
+        }
+        case AArch64::WYFY_BNDSTR: {
+          BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDSTR), MIk->getOperand(1).getReg())
+            .addReg(MIk->getOperand(2).getReg());
 
-              break;
-            }
-          }
+          MIk->removeFromParent();
+          modified = true;
 
-          assert(MIj != MIjb && "Couldn't find bl @calloc\n");
+          break;
+        }
+        case AArch64::WYFY_BNDCLR: {
+          BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDCLR), MIk->getOperand(0).getReg());
+
+          MIk->removeFromParent();
+          modified = true;
+
+          break;
+        }
+        case AArch64::WYFY_PACMA_TY: {
+          BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_PACMA), MIk->getOperand(1).getReg())
+            .addReg(MIk->getOperand(3).getReg())
+            .addReg(MIk->getOperand(2).getReg());
 
           MIk->removeFromParent();
           modified = true;
           ++StatNumPACMA;
+
           break;
         }
-        case AArch64::AOS_REALLOC: {
-          auto MIj = MIk;
-          auto MIjb = MBB.instr_begin();
-
-          for (; MIj != MIjb; MIj--) {
-            if (MIj->getOpcode() == 383) { // find bl @realloc
-              BuildMI(MBB, MIj, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDCLR), MIk->getOperand(1).getReg());
-              BuildMI(MBB, MIj, MIk->getDebugLoc(), TII->get(AArch64::AOS_XPACM), MIk->getOperand(1).getReg());
-
-              MIj++;
-
-              BuildMI(MBB, MIj, MIk->getDebugLoc(), TII->get(AArch64::AOS_PACMA), AArch64::X0)
-                .addUse(AArch64::SP)
-                //.addUse(AArch64::XZR)
-                .addReg(MIk->getOperand(0).getReg());
-              BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDSTR), AArch64::X0)
-                .addUse(MIk->getOperand(0).getReg());
-              break;
-            }
-          }
-
-          assert(MIj != MIjb && "Couldn't find bl @realloc\n");
+        case AArch64::WYFY_BBC: {
+          BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_BBC));
 
           MIk->removeFromParent();
           modified = true;
-          ++StatNumPACMA;
-          break;
-        }
-        case AArch64::AOS_FREE: {
-          auto MIj = MIk;
-          auto MIjb = MBB.instr_begin();
-
-          //for (; MIj != MIjb; MIj--) {
-          for (; MIj != MIjb;) {
-            if (MIj->getOpcode() == 383) { // find bl @free
-              BuildMI(MBB, MIj, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDCLR), AArch64::X0);
-              BuildMI(MBB, MIj, MIk->getDebugLoc(), TII->get(AArch64::AOS_XPACM), AArch64::X0);
-              //BuildMI(MBB, MIj, MIk->getDebugLoc(), TII->get(AArch64::AOS_XPACM), MIk->getOperand(0).getReg());
-
-              BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_PACMA), MIk->getOperand(0).getReg())
-                .addUse(AArch64::SP)
-                //.addUse(AArch64::XZR)
-                //.addUse(AArch64::Z31);
-                .addUse(AArch64::XZR);
-
-              //assert(MIj != MIjb && "Couldn't find bl @free\n");
-              MIk->removeFromParent();
-              modified = true;
-              ++StatNumXPACM;
-
-
-              break;
-            }
-
-            MIj--;
-          }
-
-          if (MIj == MIjb) {
-            BuildMI(MBB, MIjb, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDCLR), AArch64::X0);
-            BuildMI(MBB, MIjb, MIk->getDebugLoc(), TII->get(AArch64::AOS_XPACM), AArch64::X0);
-
-            BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_PACMA), MIk->getOperand(0).getReg())
-              .addUse(AArch64::SP)
-              //.addUse(AArch64::XZR)
-              //.addUse(AArch64::Z31);
-              .addUse(AArch64::XZR);
-            printf("Couldn't find bl @free\n");
-
-           //assert(MIj != MIjb && "Couldn't find bl @free\n");
-            MIk->removeFromParent();
-            modified = true;
-            ++StatNumXPACM;
-          }
 
           break;
         }
-        case AArch64::AOS_AUTM: {
-          BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_CHECK), MIk->getOperand(0).getReg());
 
-          MIk->removeFromParent();
-          modified = true;
-          ++StatNumAUTM;
-          break;
-        }
+
+
+        //case AArch64::AOS_ALLOC:
+        //case AArch64::AOS_MALLOC:
+        //case AArch64::AOS_CALLOC: {
+        //  BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_PACMA), MIk->getOperand(0).getReg())
+        //    .addUse(AArch64::SP)
+        //    .addReg(MIk->getOperand(2).getReg());
+        //  BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDSTR), MIk->getOperand(0).getReg())
+        //    .addReg(MIk->getOperand(2).getReg());
+
+        //  MIk->removeFromParent();
+        //  modified = true;
+        //  ++StatNumPACMA;
+
+        //  break;
+        //}
+        //case AArch64::AOS_REALLOC: {
+        //  auto MIj = MIk;
+        //  auto MIjb = MBB.instr_begin();
+
+        //  for (; MIj != MIjb; MIj--) {
+        //    if (MIj->getOpcode() == AArch64::BL) { // find bl @malloc
+        //      BuildMI(MBB, MIj, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDCLR), MIk->getOperand(1).getReg());
+        //      BuildMI(MBB, MIj, MIk->getDebugLoc(), TII->get(AArch64::AOS_XPACM), MIk->getOperand(1).getReg());
+
+				//			BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_PACMA), MIk->getOperand(0).getReg())
+				//				.addUse(AArch64::SP)
+				//				.addReg(MIk->getOperand(3).getReg());
+				//			BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDSTR), MIk->getOperand(0).getReg())
+				//				.addUse(MIk->getOperand(3).getReg());
+
+        //      break;
+        //    }
+        //  }
+
+        //  assert(MIj != MIjb && "Couldn't find bl @realloc\n");
+
+        //  MIk->removeFromParent();
+        //  modified = true;
+        //  ++StatNumPACMA;
+
+        //  break;
+        //}
+        //case AArch64::AOS_DEALLOC: {
+        //  BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDCLR), MIk->getOperand(0).getReg());
+
+        //  MIk->removeFromParent();
+        //  modified = true;
+        //  //++StatNum;
+
+				//	break;
+				//}
+        //case AArch64::AOS_FREE: {
+        //  auto MIj = MIk;
+
+        //  BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDCLR), MIk->getOperand(0).getReg());
+        //  BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_XPACM), MIk->getOperand(0).getReg());
+
+        //  for (; MIj != MBB.instr_end(); MIj++) {
+        //    if (MIj->getOpcode() == AArch64::BL) { // find bl @free
+				//			MIj++;
+        //      BuildMI(MBB, MIj, MIk->getDebugLoc(), TII->get(AArch64::AOS_PACMA), MIk->getOperand(0).getReg())
+        //        .addUse(AArch64::SP)
+        //        .addUse(AArch64::X0);
+
+        //      break;
+				//		}
+				//	}
+
+        //  assert(MIj != MBB.instr_end() && "Couldn't find bl @free\n");
+
+        //  MIk->removeFromParent();
+        //  modified = true;
+        //  ++StatNumXPACM;
+
+        //  break;
+        //}
+        //case AArch64::AOS_ELEMENT:
+				//case AArch64::AOS_ELEMENT_RET: {
+        //  BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_PACMA), MIk->getOperand(0).getReg())
+        //    .addReg(MIk->getOperand(3).getReg())
+        //    .addReg(MIk->getOperand(2).getReg());
+        //  BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_BNDSTR), MIk->getOperand(0).getReg())
+        //    .addReg(MIk->getOperand(2).getReg());
+
+        //  MIk->removeFromParent();
+        //  modified = true;
+        //  ++StatNumPACMA;
+
+				//	break;
+				//}
+        //case AArch64::AOS_SIGN: {
+				//	BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_PACMA), MIk->getOperand(0).getReg())
+        //    .addReg(MIk->getOperand(3).getReg())
+        //    .addReg(MIk->getOperand(2).getReg());
+				//		//.addUse(AArch64::SP)
+				//		//.addUse(AArch64::X0);
+
+        //  MIk->removeFromParent();
+        //  modified = true;
+
+				//	break;
+				//}
+        //case AArch64::AOS_AUTM: {
+        //  BuildMI(MBB, MIk, MIk->getDebugLoc(), TII->get(AArch64::AOS_CHECK), MIk->getOperand(0).getReg());
+
+        //  MIk->removeFromParent();
+        //  modified = true;
+        //  ++StatNumAUTM;
+        //  break;
+        //}
         default:
           break;
       }

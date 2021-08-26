@@ -709,10 +709,12 @@ let Predicates = [HasPA] in {
   defm LDRAA  : AuthLoad<0, "ldraa", simm10Scaled>;
   defm LDRAB  : AuthLoad<1, "ldrab", simm10Scaled>;
   //yh+begin
-  def AOS_MALLOC : Pseudo<(outs), (ins GPR64:$ptr, GPR64:$Rn), []>, Sched<[]>;
-  def AOS_CALLOC : Pseudo<(outs), (ins GPR64:$ptr, GPR64:$Rn), []>, Sched<[]>;
-  def AOS_REALLOC : Pseudo<(outs), (ins GPR64:$ptr, GPR64:$Rn), []>, Sched<[]>;
-  def AOS_FREE : Pseudo<(outs), (ins GPR64:$ptr), []>, Sched<[]>;
+  //def AOS_ARRAY : Pseudo<(outs), (ins GPR64:$ptr, GPR64:$Rn), []>, Sched<[]>;
+  //def AOS_MALLOC : Pseudo<(outs), (ins GPR64:$ptr, GPR64:$Rn), []>, Sched<[]>;
+  //def AOS_CALLOC : Pseudo<(outs), (ins GPR64:$ptr, GPR64:$Rn), []>, Sched<[]>;
+  //def AOS_REALLOC : Pseudo<(outs), (ins GPR64:$ptr, GPR64:$Rn), []>, Sched<[]>;
+  //def AOS_DEALLOC : Pseudo<(outs), (ins GPR64:$ptr), []>, Sched<[]>;
+  //def AOS_FREE : Pseudo<(outs), (ins GPR64:$ptr), []>, Sched<[]>;
   //def AOS_AUTM : Pseudo<(outs), (ins GPR64:$ptr), []>, Sched<[]>;
   //def AOS_PACMA : AOSTwoReg<0b110, 0b00, "pacma">;
   def AOS_PACMA : AOSThreeReg<0b110, 0b00, "pacma">;
@@ -720,8 +722,82 @@ let Predicates = [HasPA] in {
   def AOS_BNDSTR : AOSTwoReg<0b110, 0b10, "bndstr">;
   def AOS_BNDCLR : AOSOneReg<0b110, 0b11, "bndclr">;
   def AOS_CHECK : AOSOneReg<0b111, 0b00, "autm">;
+  def AOS_BBC : AOSZeroReg<0b110, 0b00, "bbcnt">;
   //yh+end
 }
+
+let isPseudo = 1, hasNoSchedulingInfo = 1 in {
+  def WYFY_PACMA : Pseudo<(outs GPR64:$dst),
+													(ins GPR64:$ptr, GPR64:$size),
+													[(set i64:$dst, (int_wyfy_pacma GPR64:$ptr, GPR64:$size))],
+													"$dst = $ptr">;
+  def WYFY_XPACM : Pseudo<(outs GPR64:$dst),
+													(ins GPR64:$ptr),
+													[(set i64:$dst, (int_wyfy_xpacm GPR64:$ptr))],
+													"$dst = $ptr">;
+  def WYFY_BNDSTR : Pseudo<(outs GPR64:$dst),
+													(ins GPR64:$ptr, GPR64:$size),
+													[(set i64:$dst, (int_wyfy_bndstr GPR64:$ptr, GPR64:$size))],
+													"$dst = $ptr">;
+  def WYFY_BNDCLR : Pseudo<(outs),
+													(ins GPR64:$ptr),
+													[(int_wyfy_bndclr GPR64:$ptr)]>;
+  def WYFY_PACMA_TY : Pseudo<(outs GPR64:$dst),
+													(ins GPR64:$ptr, GPR64:$size, GPR64:$mod),
+													[(set i64:$dst, (int_wyfy_pacma_ty GPR64:$ptr, GPR64:$size, GPR64:$mod))],
+													"$dst = $ptr">;
+  def WYFY_BBC : Pseudo<(outs),
+													(ins),
+													[(int_wyfy_bbc)],
+													"">;
+  //def WYFY_BNDCLR : Pseudo<(outs GPR64:$dst),
+	//												(ins GPR64:$ptr),
+	//												[(set i64:$dst, (int_wyfy_bndclr GPR64:$ptr))],
+	//												"$dst = $ptr">;
+
+  def AOS_ALLOC : Pseudo<(outs GPR64:$dst),
+													(ins GPR64:$ptr, GPR64:$size),
+													[(set i64:$dst, (int_aos_alloc GPR64:$ptr, GPR64:$size))],
+													"$dst = $ptr">;
+  def AOS_MALLOC : Pseudo<(outs GPR64:$dst),
+													(ins GPR64:$ptr, GPR64:$size),
+													[(set i64:$dst, (int_aos_malloc GPR64:$ptr, GPR64:$size))],
+													"$dst = $ptr">;
+  def AOS_CALLOC : Pseudo<(outs GPR64:$dst),
+													(ins GPR64:$ptr, GPR64:$size),
+													[(set i64:$dst, (int_aos_calloc GPR64:$ptr, GPR64:$size))],
+													"$dst = $ptr">;
+  def AOS_REALLOC : Pseudo<(outs GPR64:$dst),
+													(ins GPR64:$ptrA, GPR64:$ptrB, GPR64:$size),
+													[(set i64:$dst, (int_aos_realloc GPR64:$ptrA, GPR64:$ptrB, GPR64:$size))],
+													"$dst = $ptrA">;
+  def AOS_FREE : Pseudo<(outs GPR64:$dst),
+													(ins GPR64:$ptr),
+													[(set i64:$dst, (int_aos_free GPR64:$ptr))],
+													"$dst = $ptr">;
+  //def AOS_DEALLOC : Pseudo<(outs GPR64:$dst),
+	//												(ins GPR64:$ptr),
+	//												[(set i64:$dst, (int_aos_dealloc GPR64:$ptr))],
+	//												"$dst = $ptr">;
+  def AOS_DEALLOC : Pseudo<(outs),
+													(ins GPR64:$ptr),
+													[(int_aos_dealloc GPR64:$ptr)]>;
+  def AOS_ELEMENT : Pseudo<(outs),
+													(ins GPR64:$ptr, GPR64:$mod, GPR64:$size),
+													[(int_aos_element GPR64:$ptr, GPR64:$mod, GPR64:$size)]>;
+  def AOS_ELEMENT_RET : Pseudo<(outs GPR64:$dst),
+													(ins GPR64:$ptr, GPR64:$mod, GPR64:$size),
+													[(set i64:$dst, (int_aos_element_ret GPR64:$ptr, GPR64:$mod, GPR64:$size))],
+													"$dst = $ptr">;
+  def AOS_SIGN : Pseudo<(outs GPR64:$dst),
+													(ins GPR64:$ptr, GPR64:$mod, GPR64:$size),
+													[(set i64:$dst, (int_aos_sign GPR64:$ptr, GPR64:$mod, GPR64:$size))],
+													"$dst = $ptr">;
+}
+
+//let isPseudo = 1, hasNoSchedulingInfo = 1 in {
+//	def AOS_DEALLOC : Pseudo<(outs), (ins GPR64:$ptr), []>, Sched<[]>;
+//}
 
 //yh+begin
 let isPseudo = 1, hasNoSchedulingInfo = 1 in {

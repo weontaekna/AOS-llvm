@@ -2770,45 +2770,64 @@ void AArch64DAGToDAGISel::Select(SDNode *Node) {
     break;
 
   //yh+begin
-  case ISD::AOS_MALLOC: {
-    SDVTList nodeTys = CurDAG->getVTList(MVT::Other);
-    SDValue Ops[3];
-    Ops[0] = Node->getOperand(2);
-    Ops[1] = Node->getOperand(1);
-    Ops[2] = Node->getOperand(0);
+  //case ISD::AOS_ARRAY: {
+  //  SDVTList nodeTys = CurDAG->getVTList(MVT::Other);
+  //  SDValue Ops[3];
+  //  Ops[0] = Node->getOperand(2);
+  //  Ops[1] = Node->getOperand(1);
+  //  Ops[2] = Node->getOperand(0);
 
-    CurDAG->SelectNodeTo(Node, AArch64::AOS_MALLOC, nodeTys, Ops);
-    return;
-  }
-  case ISD::AOS_CALLOC: {
-    SDVTList nodeTys = CurDAG->getVTList(MVT::Other);
-    SDValue Ops[3];
-    Ops[0] = Node->getOperand(2);
-    Ops[1] = Node->getOperand(1);
-    Ops[2] = Node->getOperand(0);
+  //  CurDAG->SelectNodeTo(Node, AArch64::AOS_ARRAY, nodeTys, Ops);
+  //  return;
+  //}
+  //case ISD::AOS_MALLOC: {
+  //  SDVTList nodeTys = CurDAG->getVTList(MVT::Other);
+  //  SDValue Ops[3];
+  //  Ops[0] = Node->getOperand(2);
+  //  Ops[1] = Node->getOperand(1);
+  //  Ops[2] = Node->getOperand(0);
 
-    CurDAG->SelectNodeTo(Node, AArch64::AOS_CALLOC, nodeTys, Ops);
-    return;
-  }
-  case ISD::AOS_REALLOC: {
-    SDVTList nodeTys = CurDAG->getVTList(MVT::Other);
-    SDValue Ops[3];
-    Ops[0] = Node->getOperand(2);
-    Ops[1] = Node->getOperand(1);
-    Ops[2] = Node->getOperand(0);
+  //  CurDAG->SelectNodeTo(Node, AArch64::AOS_MALLOC, nodeTys, Ops);
+  //  return;
+  //}
+  //case ISD::AOS_CALLOC: {
+  //  SDVTList nodeTys = CurDAG->getVTList(MVT::Other);
+  //  SDValue Ops[3];
+  //  Ops[0] = Node->getOperand(2);
+  //  Ops[1] = Node->getOperand(1);
+  //  Ops[2] = Node->getOperand(0);
 
-    CurDAG->SelectNodeTo(Node, AArch64::AOS_REALLOC, nodeTys, Ops);
-    return;
-  }
-  case ISD::AOS_FREE: {
-    SDVTList nodeTys = CurDAG->getVTList(MVT::Other);
-    SDValue Ops[2];
-    Ops[0] = Node->getOperand(1);
-    Ops[1] = Node->getOperand(0);
+  //  CurDAG->SelectNodeTo(Node, AArch64::AOS_CALLOC, nodeTys, Ops);
+  //  return;
+  //}
+  //case ISD::AOS_REALLOC: {
+  //  SDVTList nodeTys = CurDAG->getVTList(MVT::Other);
+  //  SDValue Ops[3];
+  //  Ops[0] = Node->getOperand(2);
+  //  Ops[1] = Node->getOperand(1);
+  //  Ops[2] = Node->getOperand(0);
 
-    CurDAG->SelectNodeTo(Node, AArch64::AOS_FREE, nodeTys, Ops);
-    return;
-  }
+  //  CurDAG->SelectNodeTo(Node, AArch64::AOS_REALLOC, nodeTys, Ops);
+  //  return;
+  //}
+  //case ISD::AOS_DEALLOC: {
+  //  SDVTList nodeTys = CurDAG->getVTList(MVT::Other);
+  //  SDValue Ops[2];
+  //  Ops[0] = Node->getOperand(1);
+  //  Ops[1] = Node->getOperand(0);
+
+  //  CurDAG->SelectNodeTo(Node, AArch64::AOS_DEALLOC, nodeTys, Ops);
+  //  return;
+  //}
+  //case ISD::AOS_FREE: {
+  //  SDVTList nodeTys = CurDAG->getVTList(MVT::Other);
+  //  SDValue Ops[2];
+  //  Ops[0] = Node->getOperand(1);
+  //  Ops[1] = Node->getOperand(0);
+
+  //  CurDAG->SelectNodeTo(Node, AArch64::AOS_FREE, nodeTys, Ops);
+  //  return;
+  //}
   //case ISD::AOS_AUTM: {
   //  SDVTList nodeTys = CurDAG->getVTList(MVT::Other);
   //  SDValue Ops[2];

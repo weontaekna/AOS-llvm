@@ -261,10 +261,12 @@ AArch64TargetLowering::AArch64TargetLowering(const TargetMachine &TM,
   else
     setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i64, Expand);
   //yh+begin
-  setOperationAction(ISD::AOS_MALLOC, MVT::Other, Legal);
-  setOperationAction(ISD::AOS_CALLOC, MVT::Other, Legal);
-  setOperationAction(ISD::AOS_REALLOC, MVT::Other, Legal);
-  setOperationAction(ISD::AOS_FREE, MVT::Other, Legal);
+  //setOperationAction(ISD::AOS_ARRAY, MVT::Other, Legal);
+  //setOperationAction(ISD::AOS_MALLOC, MVT::Other, Legal);
+  //setOperationAction(ISD::AOS_CALLOC, MVT::Other, Legal);
+  //setOperationAction(ISD::AOS_REALLOC, MVT::Other, Legal);
+  //setOperationAction(ISD::AOS_DEALLOC, MVT::Other, Legal);
+  //setOperationAction(ISD::AOS_FREE, MVT::Other, Legal);
   //setOperationAction(ISD::AOS_AUTM, MVT::Other, Legal);
   //yh+end
 
