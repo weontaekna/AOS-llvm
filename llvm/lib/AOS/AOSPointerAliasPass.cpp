@@ -109,7 +109,7 @@ bool AOSPointerAliasPass::runOnModule(Module &M) {
 
 void AOSPointerAliasPass::getAnalysisUsage(AnalysisUsage &AU) const {
 	AU.setPreservesAll();
-	AU.addRequired<AOSBBCounterPass>();
+	//AU.addRequired<AOSBBCounterPass>();
 	AU.addRequired<CallGraphWrapperPass>();
 }
 
