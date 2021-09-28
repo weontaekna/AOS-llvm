@@ -14,8 +14,11 @@ Pass *llvm::AOS::createAOSReachTestPass() { return new AOSReachTestPass(); }
 bool AOSReachTestPass::runOnModule(Module &M) {
 	bool function_modified = false;
 
-	force_sign = true;
-	//force_sign = false;
+	//Baseline = true;
+	//AOS = true;
+	//WYFY_C = true;
+	WYFY_F = true;
+	//WYFY_FT = true;
 
 	errs() << "Start reachability test pass!\n";
 
@@ -62,10 +65,10 @@ bool AOSReachTestPass::runOnModule(Module &M) {
       auto bbc = Intrinsic::getDeclaration(F.getParent(), Intrinsic::wyfy_bbc);
       Builder.CreateCall(bbc, {}, "");
 
-      Value *arg = ConstantInt::get(Type::getInt64Ty(pM->getContext()), func_num++);
-      FunctionType *FuncTypeA = FunctionType::get(Type::getVoidTy(pM->getContext()), {Type::getInt64Ty(pM->getContext())}, false);
-      Constant *promote = F.getParent()->getOrInsertFunction("wyfy_print_func", FuncTypeA);
-      auto callA = Builder.CreateCall(promote, {arg});
+      //Value *arg = ConstantInt::get(Type::getInt64Ty(pM->getContext()), func_num++);
+      //FunctionType *FuncTypeA = FunctionType::get(Type::getVoidTy(pM->getContext()), {Type::getInt64Ty(pM->getContext())}, false);
+      //Constant *promote = F.getParent()->getOrInsertFunction("wyfy_print_func", FuncTypeA);
+      //auto callA = Builder.CreateCall(promote, {arg});
     }
   }
 
@@ -168,10 +171,10 @@ bool AOSReachTestPass::handleGlobalVariables(Module &M) {
 
 		statNumGV++;
 
-		if (force_sign || doReachabilityTest(value_map[pGV])) {
+		//if (!WYFY_FT || doReachabilityTest(value_map[pGV])) {
 			gv_list.push_back(pGV);
-			statNumGVSigned++;
-		}
+		//	statNumGVSigned++;
+		//}
   }
 
 	for (auto &F : M) {
@@ -196,6 +199,10 @@ bool AOSReachTestPass::handleGlobalVariables(Module &M) {
 bool AOSReachTestPass::handleGlobalVariable(Function *pF, GlobalVariable *pGV) {
 	set<Instruction *> user_set;
 	set<GlobalVariable *> gv_set;
+
+	bool need_taint = doReachabilityTest(value_map[pGV]);
+	if (need_taint)
+		statNumGVSigned++;
 
 	for (auto pU: pGV->users()) {
 		if (auto *pI = dyn_cast<Instruction>(pU))
@@ -226,23 +233,18 @@ bool AOSReachTestPass::handleGlobalVariable(Function *pF, GlobalVariable *pGV) {
 	auto &IF = BBF.front();
   IRBuilder<> BuilderF(&IF);
   auto castA = BuilderF.CreateCast(Instruction::BitCast, pGV, Type::getInt8PtrTy(*C));
-	auto typeIdConstant = getTypeIDConstantFrom(*pGV->getType(), *C);
-  auto pacma = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_pacma_ty, arg_type);
-  auto bndstr = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_bndstr, arg_type);
-  auto callA = BuilderF.CreateCall(pacma, {castA, arg, typeIdConstant}, ""); 
-  auto callB = BuilderF.CreateCall(bndstr, {callA, arg}, "");
-  auto castB = BuilderF.CreateCast(Instruction::BitCast, callB, pGV->getType());
-
-  //auto ptr = new GlobalVariable(*(pF->getParent()), pGV->getType(), false, GlobalVariable::CommonLinkage,
-	//                             0, "aos_ptr" + to_string(statNumGVSigned));
-	////ptr->setAlignment(8);
-	//ptr->setVisibility(GlobalValue::HiddenVisibility);
-  //ConstantPointerNull* const_ptr = ConstantPointerNull::get(pGV->getType());
-  //ptr->setInitializer(const_ptr);
-
-	//BuilderF.CreateStore(castB, ptr);
-
-	func_map[pF][pGV] = castB;
+	if (WYFY_C || WYFY_F || (need_taint && WYFY_FT)) {
+		auto typeIdConstant = getTypeIDConstantFrom(*pGV->getType(), *C);
+		auto pacma = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_pacma_ty, arg_type);
+		auto bndstr = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_bndstr, arg_type);
+		auto callA = BuilderF.CreateCall(pacma, {castA, arg, typeIdConstant}, ""); 
+		auto callB = BuilderF.CreateCall(bndstr, {callA, arg}, "");
+		auto castB = BuilderF.CreateCast(Instruction::BitCast, callB, pGV->getType());
+		func_map[pF][pGV] = castB;
+	} else {
+		auto castB = BuilderF.CreateCast(Instruction::BitCast, castA, pGV->getType());
+		func_map[pF][pGV] = castB;
+	}
 
 	for (auto pI: user_set) {
 		auto _pF = pI->getFunction();
@@ -260,13 +262,20 @@ bool AOSReachTestPass::handleGlobalVariable(Function *pF, GlobalVariable *pGV) {
 
 			IRBuilder<> Builder(&I);
 			auto castA = Builder.CreateCast(Instruction::BitCast, pGV, Type::getInt8PtrTy(*C));
-    	auto typeIdConstant = getTypeIDConstantFrom(*pGV->getType(), *C);
-			auto pacma = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_pacma_ty, arg_type);
-			auto callA = Builder.CreateCall(pacma, {castA, arg, typeIdConstant}, ""); 
-			auto castB = Builder.CreateCast(Instruction::BitCast, callA, pGV->getType());
+			if (WYFY_C || WYFY_F || (need_taint && WYFY_FT)) {
+				auto typeIdConstant = getTypeIDConstantFrom(*pGV->getType(), *C);
+				auto pacma = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_pacma_ty, arg_type);
+				auto callA = Builder.CreateCall(pacma, {castA, arg, typeIdConstant}, ""); 
+				auto castB = Builder.CreateCast(Instruction::BitCast, callA, pGV->getType());
 
-			cur_val = castB;
-			func_map[_pF][pGV] = castB;
+				cur_val = castB;
+				func_map[_pF][pGV] = castB;
+			} else {
+				auto castB = Builder.CreateCast(Instruction::BitCast, castA, pGV->getType());
+
+				cur_val = castB;
+				func_map[_pF][pGV] = castB;
+			}
 		}
 
 		unsigned cnt = 0;
@@ -290,7 +299,7 @@ bool AOSReachTestPass::handleGlobalVariable(Function *pF, GlobalVariable *pGV) {
 	// Handle global pointer pointing to global variable
 	for (auto _pGV: gv_set) {
 		if (_pGV->getInitializer() == pGV) {
-			//pGV->dump();
+			pGV->dump();
 			auto &BB = pF->front();
 			auto &I = BB.front();
 		
@@ -299,15 +308,22 @@ bool AOSReachTestPass::handleGlobalVariable(Function *pF, GlobalVariable *pGV) {
 			if (cur_val == nullptr) {
 				IRBuilder<> Builder(&I);
 				auto castA = Builder.CreateCast(Instruction::BitCast, pGV, Type::getInt8PtrTy(*C));
-      	auto typeIdConstant = getTypeIDConstantFrom(*pGV->getType(), *C);
-				auto pacma = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_pacma_ty, arg_type);
-				auto bndstr = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_bndstr, arg_type);
-				auto callA = Builder.CreateCall(pacma, {castA, arg, typeIdConstant}, ""); 
-				auto callB = Builder.CreateCall(bndstr, {callA, arg}, "");
-				auto castB = Builder.CreateCast(Instruction::BitCast, callB, pGV->getType());
+				if (WYFY_C || WYFY_F || (need_taint && WYFY_FT)) {
+					auto typeIdConstant = getTypeIDConstantFrom(*pGV->getType(), *C);
+					auto pacma = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_pacma_ty, arg_type);
+					auto bndstr = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_bndstr, arg_type);
+					auto callA = Builder.CreateCall(pacma, {castA, arg, typeIdConstant}, ""); 
+					auto callB = Builder.CreateCall(bndstr, {callA, arg}, "");
+					auto castB = Builder.CreateCast(Instruction::BitCast, callB, pGV->getType());
 
-				cur_val = castB;
-				func_map[pF][pGV] = castB;
+					cur_val = castB;
+					func_map[pF][pGV] = castB;
+				} else {
+					auto castB = Builder.CreateCast(Instruction::BitCast, castA, pGV->getType());
+
+					cur_val = castB;
+					func_map[pF][pGV] = castB;
+				}
 			}
 
 			IRBuilder<> Builder(dyn_cast<Instruction>(cur_val)->getNextNode());
@@ -316,7 +332,7 @@ bool AOSReachTestPass::handleGlobalVariable(Function *pF, GlobalVariable *pGV) {
 	}
 
 	//if (IsStructTy(ty))
-	if (IsStructTyWithArray(ty))
+	if ((WYFY_F || (need_taint && WYFY_FT)) && IsStructTyWithArray(ty))
 		handleStruct(pF, pGV, type_set);
 
 	return true;
@@ -348,11 +364,10 @@ bool AOSReachTestPass::handleInstructions(Module &M) {
 						Type *ty = pAI->getAllocatedType();
 						Function *pF = pAI->getFunction();
 
-						//if (ty->isArrayTy() || ty->isStructTy()) {
 						if (ty->isArrayTy() || IsStructTyWithArray(ty)) {
 								statNumAI++;
 
-							if (force_sign || doReachabilityTest(value_map[pAI])) {
+							if (!WYFY_FT || doReachabilityTest(value_map[pAI])) {
 								statNumAISigned++;
                 inst_list.push_back(pAI);
 							}
@@ -372,7 +387,7 @@ bool AOSReachTestPass::handleInstructions(Module &M) {
                         pF->getName() == "realloc")) {
 							statNumCI++;
 
-							if (force_sign || doReachabilityTest(value_map[&I])) {
+							if (!WYFY_FT || doReachabilityTest(value_map[&I])) {
 								statNumCISigned++;
                 inst_list.push_back(pCI);
 							}
@@ -380,7 +395,7 @@ bool AOSReachTestPass::handleInstructions(Module &M) {
 															pF->getName() == "_ZdlPv" ||
 															pF->getName() == "_ZdaPv")) {
 
-							if (force_sign || doReachabilityTest(value_map[pCI->getOperand(0)]))
+							if (!WYFY_FT || doReachabilityTest(value_map[pCI->getOperand(0)]))
                 inst_list.push_back(pCI);
             }
 
@@ -401,12 +416,10 @@ bool AOSReachTestPass::handleInstructions(Module &M) {
 		if (AllocaInst *pAI = dyn_cast<AllocaInst>(pI)) {
 			Type *ty = pAI->getAllocatedType();
 
-			//if (ty->isArrayTy() || sStructTy())
-				function_modified = handleAlloca(pF, pAI) || function_modified;
-			//else
-			//	assert(false);
+			function_modified = handleAlloca(pF, pAI) || function_modified;
+		}
 
-		} else if (CallInst *pCI = dyn_cast<CallInst>(pI)) {
+		if (CallInst *pCI = dyn_cast<CallInst>(pI)) {
 			Function *called_func = pCI->getCalledFunction();
 
 			if (called_func && (called_func->getName() == "malloc" ||
@@ -432,6 +445,9 @@ bool AOSReachTestPass::handleInstructions(Module &M) {
 }
 
 bool AOSReachTestPass::handlePtrToInts(Module &M) {
+	if (Baseline)
+		return false; 
+
 	bool function_modified = false;
 
   std::vector<Type *> arg_type;
@@ -442,6 +458,7 @@ bool AOSReachTestPass::handlePtrToInts(Module &M) {
 		for (auto &BB : F) {
 			for (auto &I : BB) {
 				if (auto pPTI = dyn_cast<PtrToIntInst>(&I)) {
+					//pPTI->dump();
 					auto ptr = pPTI->getPointerOperand();
 
 					IRBuilder<> Builder(&I);
@@ -475,6 +492,7 @@ bool AOSReachTestPass::handlePtrToInts(Module &M) {
 				//	Type *ty1 = pCI->getOperand(1)->getType();
 				//	if (PointerType *pty = dyn_cast<PointerType>(ty0)) {
 				//		if (!const0) {
+				//	pCI->dump();
 				//			IRBuilder<> Builder(&I);
 				//			auto castA = Builder.CreateCast(Instruction::BitCast, val0, Type::getInt8PtrTy(*C));
 				//			auto xpacm = Intrinsic::getDeclaration(F.getParent(), Intrinsic::wyfy_xpacm, arg_type);
@@ -488,6 +506,7 @@ bool AOSReachTestPass::handlePtrToInts(Module &M) {
 
 				//	if (PointerType *pty = dyn_cast<PointerType>(ty1)) {
 				//		if (!const1) {
+				//	pCI->dump();
 				//			IRBuilder<> Builder(&I);
 				//			auto castA = Builder.CreateCast(Instruction::BitCast, val1, Type::getInt8PtrTy(*C));
 				//			auto xpacm = Intrinsic::getDeclaration(F.getParent(), Intrinsic::wyfy_xpacm, arg_type);
@@ -499,6 +518,7 @@ bool AOSReachTestPass::handlePtrToInts(Module &M) {
 				//		}
 				//	}
 				//} else if (auto pCI = dyn_cast<FCmpInst>(&I)) {
+				//	//pCI->dump();
 				//	Value *val0 = pCI->getOperand(0);
 				//	Value *val1 = pCI->getOperand(1);
 
@@ -507,6 +527,7 @@ bool AOSReachTestPass::handlePtrToInts(Module &M) {
 				//	Type *ty0 = pCI->getOperand(0)->getType();
 				//	Type *ty1 = pCI->getOperand(1)->getType();
 				//	if (PointerType *pty = dyn_cast<PointerType>(ty0)) {
+				//	pCI->dump();
 				//		IRBuilder<> Builder(&I);
 				//		auto castA = Builder.CreateCast(Instruction::BitCast, val0, Type::getInt8PtrTy(*C));
 				//		auto xpacm = Intrinsic::getDeclaration(F.getParent(), Intrinsic::wyfy_xpacm, arg_type);
@@ -518,6 +539,7 @@ bool AOSReachTestPass::handlePtrToInts(Module &M) {
 				//	}
 
 				//	if (PointerType *pty = dyn_cast<PointerType>(ty1)) {
+				//	pCI->dump();
 				//		IRBuilder<> Builder(&I);
 				//		auto castA = Builder.CreateCast(Instruction::BitCast, val1, Type::getInt8PtrTy(*C));
 				//		auto xpacm = Intrinsic::getDeclaration(F.getParent(), Intrinsic::wyfy_xpacm, arg_type);
@@ -528,6 +550,7 @@ bool AOSReachTestPass::handlePtrToInts(Module &M) {
 				//		function_modified = true;
 				//	}
 				//} else if (auto pAI = dyn_cast<BinaryOperator>(&I)) {
+				//	//pAI->dump();
 				//	Type *ty0 = pAI->getOperand(0)->getType();
 				//	Type *ty1 = pAI->getOperand(1)->getType();
 
@@ -557,12 +580,14 @@ bool AOSReachTestPass::handlePtrToInts(Module &M) {
 }
 
 bool AOSReachTestPass::doReachabilityTest(AOSNode *node) {
-	if (force_sign)
+	if (!WYFY_FT)
 		return true;
 
   list<AOSNode *> node_list;
   set<AOSNode *> visit_set;
 
+	if (node == nullptr)
+		return false;
 	assert(node != nullptr);
 
 	node_list.push_back(node);
@@ -592,6 +617,9 @@ bool AOSReachTestPass::doReachabilityTest(AOSNode *node) {
 }
 
 bool AOSReachTestPass::handleAlloca(Function *pF, AllocaInst *pAI) {
+	if (Baseline || AOS)
+		return false;
+
 	Type *ty = pAI->getAllocatedType();
   auto size = pAI->getAllocationSizeInBits(*DL);
 	if (size == llvm::None)
@@ -632,7 +660,7 @@ bool AOSReachTestPass::handleAlloca(Function *pF, AllocaInst *pAI) {
 	auto bndclr = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_bndclr);
 	BuilderB.CreateCall(bndclr, {callB}, "");
 
-	if (IsStructTyWithArray(ty)) {
+	if ((WYFY_F || WYFY_FT) && IsStructTyWithArray(ty)) {
 		FunctionType *FuncTypeB = FunctionType::get(Type::getVoidTy(*C), {Type::getInt8PtrTy(*C), Type::getInt64Ty(*C)}, false);
 		Constant *clear = pF->getParent()->getOrInsertFunction("wyfy_clear_elements_stack", FuncTypeB);
 		BuilderB.CreateCall(clear, {callB, arg});
@@ -647,6 +675,9 @@ bool AOSReachTestPass::handleAlloca(Function *pF, AllocaInst *pAI) {
 }
 
 bool AOSReachTestPass::handleMalloc(Function *pF, CallInst *pCI) {
+	if (Baseline)
+		return false;
+
 	set <Type *> type_set;
 	AOSNode *node = value_map[pCI];
 
@@ -725,12 +756,16 @@ bool AOSReachTestPass::handleMalloc(Function *pF, CallInst *pCI) {
 		//callC->setOperand(0, pCI);
 	}
 
-	handleStruct(pF, pCI, type_set);
+	if (WYFY_F || WYFY_FT)
+		handleStruct(pF, pCI, type_set);
 
   return true;
 }
 
 bool AOSReachTestPass::handleFree(Function *pF, CallInst *pCI) {
+	if (Baseline)
+		return false;
+
   auto arg = pCI->getArgOperand(0);
   std::vector<Type *> arg_type;
   arg_type.push_back(arg->getType());
@@ -739,13 +774,16 @@ bool AOSReachTestPass::handleFree(Function *pF, CallInst *pCI) {
 	auto bndclr = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_bndclr);
 	BuilderA.CreateCall(bndclr, {arg}, "");
 
-	//FunctionType *FuncTypeA = FunctionType::get(Type::getInt8PtrTy(*C), {Type::getInt8PtrTy(*C)}, false);
-	FunctionType *FuncTypeA = FunctionType::get(Type::getVoidTy(*C), {Type::getInt8PtrTy(*C)}, false);
-	Constant *clear = pF->getParent()->getOrInsertFunction("wyfy_clear_elements_heap", FuncTypeA);
-	BuilderA.CreateCall(clear, {arg});
 	auto xpacm = Intrinsic::getDeclaration(pF->getParent(), Intrinsic::wyfy_xpacm, arg_type);
 	auto callA = BuilderA.CreateCall(xpacm, {arg}, "");
 	pCI->setOperand(0, callA);
+
+	if (WYFY_F || WYFY_FT) {
+		//FunctionType *FuncTypeA = FunctionType::get(Type::getInt8PtrTy(*C), {Type::getInt8PtrTy(*C)}, false);
+		FunctionType *FuncTypeA = FunctionType::get(Type::getVoidTy(*C), {Type::getInt8PtrTy(*C)}, false);
+		Constant *clear = pF->getParent()->getOrInsertFunction("wyfy_clear_elements_heap", FuncTypeA);
+		BuilderA.CreateCall(clear, {callA});
+	}
 
   return true;
 }
@@ -778,7 +816,7 @@ bool AOSReachTestPass::handleStruct(Function *pF, Value *pV, set<Type *> type_se
 				continue;
 
 			// taint check
-			if (!force_sign && !doReachabilityTest(node))
+			if (WYFY_FT && !doReachabilityTest(node))
 				continue;
 
 			for (auto const &it: node->aliases) {
@@ -913,7 +951,16 @@ void AOSReachTestPass::init(Module &M) {
 		  C = &F.getContext();
 			DL = &F.getParent()->getDataLayout();
 
-			break;
+			return;
+		}
+	}
+
+	for (auto &F : M) {
+		if (&F) {
+		  C = &F.getContext();
+			DL = &F.getParent()->getDataLayout();
+
+			return;
 		}
 	}
 }

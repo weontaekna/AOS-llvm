@@ -60,7 +60,11 @@ using namespace AOS;
     bool runOnModule(Module &M) override;
 		void getAnalysisUsage(AnalysisUsage &AU) const;
 
-		bool force_sign = false;
+    bool Baseline = false;
+    bool AOS = false;
+    bool WYFY_C = false;
+    bool WYFY_F = false;
+    bool WYFY_FT = false;
 
     unsigned statNumGV = 0;
     unsigned statNumGVSigned = 0;

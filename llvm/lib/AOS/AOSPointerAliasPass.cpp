@@ -872,7 +872,8 @@ void AOSPointerAliasPass::getFunctionsFromCallGraph(Module &M) {
 	CallGraphNode *cgn = CG[main];
 
 	cgn_list.push_back(cgn);
-	func_list.push_back(main);
+	if (main)
+		func_list.push_back(main);
 
 	while (!cgn_list.empty()) {
 		CallGraphNode *caller = cgn_list.front();
@@ -897,7 +898,8 @@ void AOSPointerAliasPass::getFunctionsFromCallGraph(Module &M) {
 	}
 
   //
-  uncalled_list.push_back(main);
+	if (main)
+	  uncalled_list.push_back(main);
 	//// TODO need special care... cuz arg will not be examined...
 	for (auto &F : M) {
 		if (&F && !F.isDeclaration() &&
