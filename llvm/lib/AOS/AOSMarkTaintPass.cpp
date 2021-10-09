@@ -27,8 +27,10 @@ bool AOSMarkTaintPass::runOnModule(Module &M) {
 		}
 	}
 
-
   handleInstructions(M);
+
+
+
 
 	unsigned cnt = 0;
 	//errs() << "Print ExInputSet!\n";

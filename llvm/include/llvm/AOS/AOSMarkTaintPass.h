@@ -37,6 +37,7 @@ using namespace std;
 		set<AOSNode *> visit_node_set;
 
     AOSNode *root_node;
+  	LLVMContext *C;
 
     bool runOnModule(Module &M) override;
 		void getAnalysisUsage(AnalysisUsage &AU) const;
@@ -45,9 +46,12 @@ using namespace std;
   private:  
 		void handleGlobalVariables(Module &M);
 		void handleCmdLineArguments(Module &M);
+		void handleExInputFunc(Module &M);
 		void handleInstructions(Module &M);
-    void checkAndPropTaint(Value *pV);
-		bool findExInputFunc(Value *pV);
+    bool doReachabilityTest(AOSNode *node);
+    void taintFree(AOSNode *node);
+    void handleStruct(Value *pV);
+    bool IsStructTyWithArray(Type *ty);
     void handleAOSNode(AOSNode *node);
     void doTaintPropagation(Value *pV);
 		Value *getArgument(Value *pI, Value *pV);
