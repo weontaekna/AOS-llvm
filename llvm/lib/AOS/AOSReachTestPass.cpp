@@ -712,7 +712,7 @@ bool AOSReachTestPass::handleMalloc(Function *pF, Instruction *pI) {
 	Function *called_func = nullptr;
 
 	if (CallInst *pCI = dyn_cast<CallInst>(pI)) {
-		pF = pCI->getCalledFunction();
+		called_func = pCI->getCalledFunction();
 
 		std::vector<Type *> arg_type;
 		arg_type.push_back(pCI->getType());
@@ -771,7 +771,7 @@ bool AOSReachTestPass::handleMalloc(Function *pF, Instruction *pI) {
 			handleStruct(pF, pCI, type_set);
 
 	} else if (InvokeInst *pII = dyn_cast<InvokeInst>(pI)) {
-		pF = pII->getCalledFunction();
+		called_func = pII->getCalledFunction();
 
 		std::vector<Type *> arg_type;
 		arg_type.push_back(pII->getType());
