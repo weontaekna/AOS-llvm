@@ -17,8 +17,8 @@ bool AOSReachTestPass::runOnModule(Module &M) {
 	//Baseline = true;
 	//AOS = true;
 	//WYFY_C = true;
-	//WYFY_F = true;
-	WYFY_FT = true;
+	WYFY_F = true;
+	//WYFY_FT = true;
 
 	errs() << "Start reachability test pass!\n";
 
